@@ -2,7 +2,7 @@
 # Use 'make help' to see available targets
 
 # Configuration variables
-IMAGE_NAME = pavavela/yolo-mcp
+IMAGE_NAME = paravela/yolo-clickhouse
 VERSION ?= latest
 
 # Docker build flags

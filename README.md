@@ -1,28 +1,28 @@
 # MCP-CLICKHOUSE
 
-DA MOST BRUTAL AN' SIMPLE WAY TA QUERY CLICKHOUSE FROM YER MCP TOOLS!
+A simple and efficient way to query ClickHouse using the Model Context Protocol (MCP).
 
-## WOT IT DOES
+## What It Does
 
-MCP-CLICKHOUSE is a Model Context Protocol (MCP) server dat gives ya a simple way ta run any SQL query on ClickHouse. It only has one tool - `exec_sql` - cuz dat's all ya need! LESS IS MORE, YA GROT!
+MCP-CLICKHOUSE is a Model Context Protocol (MCP) server that provides a straightforward way to run SQL queries on ClickHouse. It includes a single tool - `exec_sql` - which is all you need for efficient database interaction.
 
-## INSTALLATION
+## Installation
 
 ```bash
 pip install -e .
 ```
 
-## RUNNIN' DA SERVER
+## Running the Server
 
-### USIN' DOCKER (DA BEST WAY!)
+### Using Docker (Recommended)
 
-First, build da image:
+First, build the image:
 
 ```bash
-docker build -t mcp-clickhouse .
+docker build -t paravela/yolo-clickhouse .
 ```
 
-Den run a query by pipin' a JSON-RPC message sequence:
+Then run a query by piping a JSON-RPC message sequence:
 
 ```bash
 # Create a file with the proper MCP initialization sequence
@@ -33,10 +33,10 @@ cat > mcp_query.json << EOF
 EOF
 
 # Run the query
-cat mcp_query.json | docker run -i --rm mcp-clickhouse
+cat mcp_query.json | docker run -i --rm paravela/yolo-clickhouse
 ```
 
-### USIN' PYTHON (IF YA MUST)
+### Using Python
 
 ```bash
 export CLICKHOUSE_HOST=localhost
@@ -45,21 +45,21 @@ export CLICKHOUSE_PASSWORD=clickhouse
 python -m mcp_clickhouse.main
 ```
 
-## ENVIRONMENT VARIABLES
+## Environment Variables
 
-'ERE ARE DA ENVIRONMENT VARIABLES YA CAN USE:
+The following environment variables can be used to configure the server:
 
 - `CLICKHOUSE_HOST`: ClickHouse server hostname (default: `localhost`)
 - `CLICKHOUSE_PORT`: ClickHouse server port (default: `8123`)
 - `CLICKHOUSE_USER`: ClickHouse username (default: `default`)
 - `CLICKHOUSE_PASSWORD`: ClickHouse password (default: empty string)
-- `CLICKHOUSE_SECURE`: Whether ta use HTTPS (default: `false`)
+- `CLICKHOUSE_SECURE`: Whether to use HTTPS (default: `false`)
 
-## HOW TA CALL DA EXEC_SQL TOOL
+## How to Call the exec_sql Tool
 
-### MCP INITIALIZATION SEQUENCE
+### MCP Initialization Sequence
 
-Before ya can call any tools, ya need ta initialize da MCP server with dis sequence:
+Before you can call any tools, you need to initialize the MCP server with this sequence:
 
 ```json
 // 1. Initialize request
@@ -68,12 +68,12 @@ Before ya can call any tools, ya need ta initialize da MCP server with dis seque
 // 2. Initialized notification
 {"jsonrpc": "2.0", "method": "notifications/initialized"}
 
-// 3. Now ya can call tools!
+// 3. Now you can call tools
 ```
 
-### JSON-RPC FORMAT
+### JSON-RPC Format
 
-Da proper JSON-RPC format (version 2.0) for callin' da exec_sql tool is:
+The proper JSON-RPC format (version 2.0) for calling the exec_sql tool is:
 
 ```json
 {
@@ -89,9 +89,9 @@ Da proper JSON-RPC format (version 2.0) for callin' da exec_sql tool is:
 }
 ```
 
-### EXAMPLES
+### Examples
 
-#### CREATIN' A TABLE
+#### Creating a Table
 
 ```json
 {
@@ -107,7 +107,7 @@ Da proper JSON-RPC format (version 2.0) for callin' da exec_sql tool is:
 }
 ```
 
-#### INSERTIN' DATA
+#### Inserting Data
 
 ```json
 {
@@ -117,13 +117,13 @@ Da proper JSON-RPC format (version 2.0) for callin' da exec_sql tool is:
   "params": {
     "name": "exec_sql",
     "arguments": {
-      "query": "INSERT INTO test_table VALUES (1, 'WAAAGH!')"
+      "query": "INSERT INTO test_table VALUES (1, 'Test')"
     }
   }
 }
 ```
 
-#### RUNNIN' A QUERY
+#### Running a Query
 
 ```json
 {
@@ -139,9 +139,9 @@ Da proper JSON-RPC format (version 2.0) for callin' da exec_sql tool is:
 }
 ```
 
-## RESPONSE FORMAT
+## Response Format
 
-Da server will respond with a JSON-RPC response like dis:
+The server will respond with a JSON-RPC response like this:
 
 ```json
 {
@@ -151,7 +151,7 @@ Da server will respond with a JSON-RPC response like dis:
     "content": [
       {
         "type": "text",
-        "text": "{\"rows\": [{\"id\": 1, \"name\": \"WAAAGH!\"}], \"columns\": [\"id\", \"name\"]}"
+        "text": "{\"rows\": [{\"id\": 1, \"name\": \"Test\"}], \"columns\": [\"id\", \"name\"]}"
       }
     ],
     "isError": false
@@ -159,7 +159,7 @@ Da server will respond with a JSON-RPC response like dis:
 }
 ```
 
-If dere's an error, you'll get:
+If there's an error, you'll get:
 
 ```json
 {
