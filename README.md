@@ -1,202 +1,178 @@
-# ClickHouse MCP Server
-[![PyPI - Version](https://img.shields.io/pypi/v/mcp-clickhouse)](https://pypi.org/project/mcp-clickhouse)
+# MCP-CLICKHOUSE
 
-An MCP server for ClickHouse.
+DA MOST BRUTAL AN' SIMPLE WAY TA QUERY CLICKHOUSE FROM YER MCP TOOLS!
 
-<a href="https://glama.ai/mcp/servers/yvjy4csvo1"><img width="380" height="200" src="https://glama.ai/mcp/servers/yvjy4csvo1/badge" alt="mcp-clickhouse MCP server" /></a>
+## WOT IT DOES
 
-## Features
+MCP-CLICKHOUSE is a Model Context Protocol (MCP) server dat gives ya a simple way ta run any SQL query on ClickHouse. It only has one tool - `exec_sql` - cuz dat's all ya need! LESS IS MORE, YA GROT!
 
-### Tools
+## INSTALLATION
 
-* `run_select_query`
-  - Execute SQL queries on your ClickHouse cluster.
-  - Input: `sql` (string): The SQL query to execute.
-  - All ClickHouse queries are run with `readonly = 1` to ensure they are safe.
+```bash
+pip install -e .
+```
 
-* `list_databases`
-  - List all databases on your ClickHouse cluster.
+## RUNNIN' DA SERVER
 
-* `list_tables`
-  - List all tables in a database.
-  - Input: `database` (string): The name of the database.
+### USIN' DOCKER (DA BEST WAY!)
 
-## Configuration
+First, build da image:
 
-1. Open the Claude Desktop configuration file located at:
-   - On macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
+```bash
+docker build -t mcp-clickhouse .
+```
 
-2. Add the following:
+Den run a query by pipin' a JSON-RPC message sequence:
+
+```bash
+# Create a file with the proper MCP initialization sequence
+cat > mcp_query.json << EOF
+{"jsonrpc": "2.0", "id": "init-1", "method": "initialize", "params": {"protocolVersion": "0.1.0", "capabilities": {}, "clientInfo": {"name": "test-client", "version": "1.0.0"}}}
+{"jsonrpc": "2.0", "method": "notifications/initialized"}
+{"jsonrpc": "2.0", "id": "sql-1", "method": "tools/call", "params": {"name": "exec_sql", "arguments": {"query": "SELECT 1 as test"}}}
+EOF
+
+# Run the query
+cat mcp_query.json | docker run -i --rm mcp-clickhouse
+```
+
+### USIN' PYTHON (IF YA MUST)
+
+```bash
+export CLICKHOUSE_HOST=localhost
+export CLICKHOUSE_USER=default
+export CLICKHOUSE_PASSWORD=clickhouse
+python -m mcp_clickhouse.main
+```
+
+## ENVIRONMENT VARIABLES
+
+'ERE ARE DA ENVIRONMENT VARIABLES YA CAN USE:
+
+- `CLICKHOUSE_HOST`: ClickHouse server hostname (default: `localhost`)
+- `CLICKHOUSE_PORT`: ClickHouse server port (default: `8123`)
+- `CLICKHOUSE_USER`: ClickHouse username (default: `default`)
+- `CLICKHOUSE_PASSWORD`: ClickHouse password (default: empty string)
+- `CLICKHOUSE_SECURE`: Whether ta use HTTPS (default: `false`)
+
+## HOW TA CALL DA EXEC_SQL TOOL
+
+### MCP INITIALIZATION SEQUENCE
+
+Before ya can call any tools, ya need ta initialize da MCP server with dis sequence:
+
+```json
+// 1. Initialize request
+{"jsonrpc": "2.0", "id": "init-1", "method": "initialize", "params": {"protocolVersion": "0.1.0", "capabilities": {}, "clientInfo": {"name": "test-client", "version": "1.0.0"}}}
+
+// 2. Initialized notification
+{"jsonrpc": "2.0", "method": "notifications/initialized"}
+
+// 3. Now ya can call tools!
+```
+
+### JSON-RPC FORMAT
+
+Da proper JSON-RPC format (version 2.0) for callin' da exec_sql tool is:
 
 ```json
 {
-  "mcpServers": {
-    "mcp-clickhouse": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--with",
-        "mcp-clickhouse",
-        "--python",
-        "3.13",
-        "mcp-clickhouse"
-      ],
-      "env": {
-        "CLICKHOUSE_HOST": "<clickhouse-host>",
-        "CLICKHOUSE_PORT": "<clickhouse-port>",
-        "CLICKHOUSE_USER": "<clickhouse-user>",
-        "CLICKHOUSE_PASSWORD": "<clickhouse-password>",
-        "CLICKHOUSE_SECURE": "true",
-        "CLICKHOUSE_VERIFY": "true",
-        "CLICKHOUSE_CONNECT_TIMEOUT": "30",
-        "CLICKHOUSE_SEND_RECEIVE_TIMEOUT": "30"
-      }
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "id": "456",
+  "params": {
+    "name": "exec_sql",
+    "arguments": {
+      "query": "SELECT * FROM system.tables LIMIT 5"
     }
   }
 }
 ```
 
-Update the environment variables to point to your own ClickHouse service.
+### EXAMPLES
 
-Or, if you'd like to try it out with the [ClickHouse SQL Playground](https://sql.clickhouse.com/), you can use the following config:
+#### CREATIN' A TABLE
 
 ```json
 {
-  "mcpServers": {
-    "mcp-clickhouse": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--with",
-        "mcp-clickhouse",
-        "--python",
-        "3.13",
-        "mcp-clickhouse"
-      ],
-      "env": {
-        "CLICKHOUSE_HOST": "sql-clickhouse.clickhouse.com",
-        "CLICKHOUSE_PORT": "8443",
-        "CLICKHOUSE_USER": "demo",
-        "CLICKHOUSE_PASSWORD": "",
-        "CLICKHOUSE_SECURE": "true",
-        "CLICKHOUSE_VERIFY": "true",
-        "CLICKHOUSE_CONNECT_TIMEOUT": "30",
-        "CLICKHOUSE_SEND_RECEIVE_TIMEOUT": "30"
-      }
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "id": "789",
+  "params": {
+    "name": "exec_sql",
+    "arguments": {
+      "query": "CREATE TABLE IF NOT EXISTS test_table (id UInt32, name String) ENGINE = MergeTree() ORDER BY id"
     }
   }
 }
 ```
 
-
-3. Locate the command entry for `uv` and replace it with the absolute path to the `uv` executable. This ensures that the correct version of `uv` is used when starting the server. On a mac, you can find this path using `which uv`.
-
-4. Restart Claude Desktop to apply the changes.
-
-## Development
-
-1. In `test-services` directory run `docker compose up -d` to start the ClickHouse cluster.
-
-2. Add the following variables to a `.env` file in the root of the repository.
-
-```
-CLICKHOUSE_HOST=localhost
-CLICKHOUSE_PORT=8123
-CLICKHOUSE_USER=default
-CLICKHOUSE_PASSWORD=clickhouse
-```
-
-3. Run `uv sync` to install the dependencies. To install `uv` follow the instructions [here](https://docs.astral.sh/uv/). Then do `source .venv/bin/activate`.
-
-4. For easy testing, you can run `mcp dev mcp_clickhouse/mcp_server.py` to start the MCP server.
-
-### Environment Variables
-
-The following environment variables are used to configure the ClickHouse connection:
-
-#### Required Variables
-* `CLICKHOUSE_HOST`: The hostname of your ClickHouse server
-* `CLICKHOUSE_USER`: The username for authentication
-* `CLICKHOUSE_PASSWORD`: The password for authentication
-
-#### Optional Variables
-* `CLICKHOUSE_PORT`: The port number of your ClickHouse server
-  - Default: `8443` if HTTPS is enabled, `8123` if disabled
-  - Usually doesn't need to be set unless using a non-standard port
-* `CLICKHOUSE_SECURE`: Enable/disable HTTPS connection
-  - Default: `"true"`
-  - Set to `"false"` for non-secure connections
-* `CLICKHOUSE_VERIFY`: Enable/disable SSL certificate verification
-  - Default: `"true"`
-  - Set to `"false"` to disable certificate verification (not recommended for production)
-* `CLICKHOUSE_CONNECT_TIMEOUT`: Connection timeout in seconds
-  - Default: `"30"`
-  - Increase this value if you experience connection timeouts
-* `CLICKHOUSE_SEND_RECEIVE_TIMEOUT`: Send/receive timeout in seconds
-  - Default: `"300"`
-  - Increase this value for long-running queries
-* `CLICKHOUSE_DATABASE`: Default database to use
-  - Default: None (uses server default)
-  - Set this to automatically connect to a specific database
-
-#### Example Configurations
-
-For local development with Docker:
-```env
-# Required variables
-CLICKHOUSE_HOST=localhost
-CLICKHOUSE_USER=default
-CLICKHOUSE_PASSWORD=clickhouse
-
-# Optional: Override defaults for local development
-CLICKHOUSE_SECURE=false  # Uses port 8123 automatically
-CLICKHOUSE_VERIFY=false
-```
-
-For ClickHouse Cloud:
-```env
-# Required variables
-CLICKHOUSE_HOST=your-instance.clickhouse.cloud
-CLICKHOUSE_USER=default
-CLICKHOUSE_PASSWORD=your-password
-
-# Optional: These use secure defaults
-# CLICKHOUSE_SECURE=true  # Uses port 8443 automatically
-# CLICKHOUSE_DATABASE=your_database
-```
-
-For ClickHouse SQL Playground:
-```env
-CLICKHOUSE_HOST=sql-clickhouse.clickhouse.com
-CLICKHOUSE_USER=demo
-CLICKHOUSE_PASSWORD=
-# Uses secure defaults (HTTPS on port 8443)
-```
-
-You can set these variables in your environment, in a `.env` file, or in the Claude Desktop configuration:
+#### INSERTIN' DATA
 
 ```json
 {
-  "mcpServers": {
-    "mcp-clickhouse": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--with",
-        "mcp-clickhouse",
-        "--python",
-        "3.13",
-        "mcp-clickhouse"
-      ],
-      "env": {
-        "CLICKHOUSE_HOST": "<clickhouse-host>",
-        "CLICKHOUSE_USER": "<clickhouse-user>",
-        "CLICKHOUSE_PASSWORD": "<clickhouse-password>",
-        "CLICKHOUSE_DATABASE": "<optional-database>"
-      }
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "id": "101112",
+  "params": {
+    "name": "exec_sql",
+    "arguments": {
+      "query": "INSERT INTO test_table VALUES (1, 'WAAAGH!')"
     }
   }
 }
 ```
 
+#### RUNNIN' A QUERY
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "id": "131415",
+  "params": {
+    "name": "exec_sql",
+    "arguments": {
+      "query": "SELECT * FROM test_table"
+    }
+  }
+}
+```
+
+## RESPONSE FORMAT
+
+Da server will respond with a JSON-RPC response like dis:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "131415",
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"rows\": [{\"id\": 1, \"name\": \"WAAAGH!\"}], \"columns\": [\"id\", \"name\"]}"
+      }
+    ],
+    "isError": false
+  }
+}
+```
+
+If dere's an error, you'll get:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "131415",
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Error executing SQL: [error message]"
+      }
+    ],
+    "isError": true
+  }
+}
+```
