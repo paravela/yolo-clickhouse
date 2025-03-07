@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<clickhouse>
+    <!-- Enable access for any client -->
+    <listen_host>0.0.0.0</listen_host>
+
+    <!-- Enable profiling -->
+    <query_profiler_real_time_period_ns>1000000000</query_profiler_real_time_period_ns>
+    <query_profiler_cpu_time_period_ns>1000000000</query_profiler_cpu_time_period_ns>
+    <allow_introspection_functions>1</allow_introspection_functions>
+    <allow_profile_events>1</allow_profile_events>
+    <profile_events_queue_size>100000</profile_events_queue_size>
+
+    <!-- Default user with password -->
+    <users>
+        <default>
+            <password>clickhouse</password>
+            <networks>
+                <ip>::/0</ip>
+            </networks>
+            <profile>default</profile>
+            <quota>default</quota>
+            <access_management>1</access_management>
+        </default>
+    </users>
+</clickhouse>
